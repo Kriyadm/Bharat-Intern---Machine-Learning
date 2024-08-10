@@ -1,0 +1,36 @@
+import pandas as pd
+import numpy as np
+import math
+from sklearn.model_selection import train_test_split
+data=pd.read_csv('/content/housing.csv').values
+
+x=data[:,0:-1]
+y=data[:,-1]
+x_train,x_test,y_train,y_test=train_test_split(x,y,test_size=0.2)
+nclasses=np.unique(y_train).shape[0]
+dist=np.zeros(shape=x_train.shape[0])
+pred=np.zeros(shape=x_test.shape[0])
+k=int(input("Enter the number of nearest neighbours:"))
+
+for i in range(x_test.shape[0]):
+     dist=np.sqrt(np.sum((x_train-x_test[i])**2,axis=1))
+     kminind=np.argpartition(dist,k)[0:k]
+     invdist=1/(dist+10e-20)
+     denom=sum(invdist[kminind])
+     pred[i]=np.dot(invdist[kminind]/denom,y_train[kminind])
+#print(pred)
+def MAE(pred, y_test):
+    return np.mean(abs(pred-y_test))
+def MSE(pred, y_test):
+    return np.mean((pred-y_test)**2)
+def MAPE(pred, y_test):
+    return np.mean(abs(pred-y_test)/y_test)
+
+mae=MAE(pred, y_test)
+mse=MSE(pred,y_test)
+rmse=np.sqrt(mse)
+mape=MAPE(pred,y_test)
+print(mae)
+print(mse)
+print(rmse)
+print(mape)
