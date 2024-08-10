@@ -1,0 +1,62 @@
+import pandas as pd
+import numpy as np
+from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report
+
+# Load data
+data = load_iris()
+x = data.data[:, 1:-1]  # Features (excluding first and last column)
+y = data.target         # Labels
+
+# Split data into training and testing sets
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, stratify=y)
+
+nclasses = np.unique(y_train).shape[0]
+k = int(input("Enter the number of nearest neighbours to be used k = "))
+
+# Initialize arrays
+dist = np.zeros(shape=x_train.shape[0])
+pred = np.zeros(shape=x_test.shape[0])
+classvotes = np.zeros(shape=nclasses)
+
+# KNN prediction
+for i in range(x_test.shape[0]):
+    dist = np.sqrt(np.sum((x_train - x_test[i])**2, axis=1))
+    kminind = np.argpartition(dist, k)[:k]
+    invdist = 1 / (dist + 1e-20)
+    denom = np.sum(invdist[kminind])
+    
+    classvotes[:] = 0  # Reset classvotes
+    for j in range(k):
+        classvotes[int(y_train[kminind[j]])] += invdist[kminind[j]]
+    
+    classvotes /= denom
+    pred[i] = np.argmax(classvotes)
+
+# Accuracy calculation
+def calc_acc(y_pred, y_true):
+    return np.mean(y_pred.astype(int) == y_true.astype(int))
+
+# Precision calculation
+def calc_prec(y_pred, y_true):
+    report = classification_report(y_true, y_pred, output_dict=True)
+    return report['accuracy']  # This gives the overall accuracy, not class-wise precision
+
+# Recall calculation
+def calc_recall(y_pred, y_true):
+    report = classification_report(y_true, y_pred, output_dict=True)
+    return report['accuracy']  # This gives the overall accuracy, not class-wise recall
+
+# Calculate metrics
+accuracy = calc_acc(pred, y_test)
+prec = calc_prec(pred, y_test)
+recall = calc_recall(pred, y_test)
+f1score = (2 * prec * recall) / (prec + recall)
+
+print("Accuracy:", accuracy)
+print("Precision:", prec)
+print("Recall:", recall)
+print("F1 score:", f1score)
+print("Classification report:")
+print(classification_report(y_test, pred))
